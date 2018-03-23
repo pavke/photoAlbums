@@ -40,12 +40,12 @@ class Photo extends Controller
 	 * defer - маркер отложенной загрузки шаблонного тега: **event** – загрузка контента только по желанию пользователя при нажатии кнопки "Загрузить", **emergence** – загрузка контента только при появлении в окне браузера клиента, **async** – асинхронная (одновременная) загрузка контента совместно с контентом шаблонных тегов с тем же маркером, **sync** – синхронная (последовательная) загрузка контента совместно с контентом шаблонных тегов с тем же маркером, по умолчанию загрузка контента только по желанию пользователя
 	 * defer_title - текстовая строка, выводимая на месте появления загружаемого контента с помощью отложенной загрузки шаблонного тега
 	 * template - шаблон тега (файл modules/photo/views/photo.view.show_block_**template**.php; по умолчанию шаблон modules/photo/views/photo.view.show_block.php)
-	 *
+     * @param string $image_album выводить фото альбома или последнюю фотографию
 	 * @return void
 	 */
 	new public function show_category($attributes)
 	{
-		$attributes = $this->get_attributes($attributes, 'count', 'site_id', 'cat_id', 'sort', 'images_variation', 'only_module', 'tag', 'template');
+		$attributes = $this->get_attributes($attributes, 'count', 'site_id', 'cat_id', 'sort', 'images_variation', 'only_module', 'tag', 'template', 'image_album');
 
 		$count   = $attributes["count"] ? intval($attributes["count"]) : 3;
 		$site_ids = explode(",", $attributes["site_id"]);
@@ -53,6 +53,7 @@ class Photo extends Controller
 		$sort    = $attributes["sort"] == "date" || $attributes["sort"] == "rand" ? $attributes["sort"] : "";
 		$images_variation = $attributes["images_variation"] ? strval($attributes["images_variation"]) : 'medium';
 		$tag = $attributes["tag"] && $this->diafan->configmodules('tags', 'photo') ? strval($attributes["tag"]) : '';
+        $image_album = (bool) $attributes["image_album"];
 
 		if ($attributes["only_module"] && ($this->diafan->_site->module != "photo" || in_array($this->diafan->_site->id, $site_ids)))
 			return;
@@ -70,7 +71,7 @@ class Photo extends Controller
 			}
 		}
 
-		$result = $this->model->show_category($count, $site_ids, $cat_ids, $sort, $images_variation, $tag);
+		$result = $this->model->show_category($count, $site_ids, $cat_ids, $sort, $images_variation, $tag, $image_album);
 		$result["attributes"] = $attributes;
 
 		echo $this->diafan->_tpl->get('show_category', 'photo', $result, $attributes["template"]);

@@ -34,10 +34,11 @@ class Photo_model extends Model
 	 * @param array $cat_ids категории
 	 * @param string $sort сортировка date - по дате, rand - случайно
 	 * @param string $images_variation размер изображений
+	 * @param string $image_album выводить фото альбома или последнюю фотографию
 	 * @param string $tag тег
 	 * @return array
 	 */
-	new public function show_category($count, $site_ids, $cat_ids, $sort, $images_variation, $tag)
+	new public function show_category($count, $site_ids, $cat_ids, $sort, $images_variation, $tag, $image_album)
 	{
 		$time = mktime(23, 59, 0, date("m"), date("d"), date("Y"));
 
@@ -53,6 +54,7 @@ class Photo_model extends Model
 			"access" => ($this->diafan->configmodules('where_access_element', 'photo') || $this->diafan->configmodules('where_access_cat', 'photo') ? $this->diafan->_users->role_id : 0),
 			"time"     => $time,
 			"tag" => $tag,
+            "image_album" => (bool) $image_album
 		);
 
 		if ($sort == "rand" || ! $result = $this->diafan->_cache->get($cache_meta, "photo"))
@@ -140,14 +142,13 @@ class Photo_model extends Model
 			{
 				$rows = DB::query_range_fetch_all(
 				"SELECT e.id, e.[name],e.[anons], e.timeedit, e.site_id,"
-				." (SELECT p.id FROM {photo} AS p WHERE p.cat_id = e.id LIMIT 1) AS p_id"
+				." (SELECT p.id FROM {photo} AS p WHERE p.cat_id = e.id ORDER BY p.sort DESC LIMIT 1) AS p_id"
 				." FROM {photo_category} AS e"
 				.$inner
 				.($this->diafan->configmodules('where_access_element', 'photo') ? " LEFT JOIN {access} AS a ON a.element_id=e.id AND a.module_name='photo' AND a.element_type='element'" : "")
 				." WHERE e.[act]='1' AND e.trash='0'"
 				.($this->diafan->_site->module == 'photo' && $this->diafan->_route->show ? " AND e.id<>".$this->diafan->_route->show : '')
 				.$where
-				//." AND e.date_start<=%d AND (e.date_finish=0 OR e.date_finish>=%d)"
 				.($this->diafan->configmodules('where_access_element', 'photo') ? " AND (e.access='0' OR e.access='1' AND a.role_id=".$this->diafan->_users->role_id.")" : '')
 				." GROUP BY e.id"
 				.$order,
@@ -158,7 +159,7 @@ class Photo_model extends Model
 				$result["rows"] = array_merge($result["rows"], $rows);
 			}
 
-			$this->cat_elements($result["rows"], $images_variation);
+			$this->cat_elements($result["rows"], $images_variation, $image_album);
 			if(!empty($result["rows"]) && $tag)
 			{
 				$result["name"] .= ': '.$t["name"];
@@ -186,9 +187,10 @@ class Photo_model extends Model
 	 *
 	 * @param array $rows все полученные из базы данных элементы
 	 * @param string $images_variation размер изображений
+	 * @param string $image_album выводить фото альбома или последнюю фотографию
 	 * @return void
 	 */
-	public function cat_elements(&$rows, $images_variation = 'medium')
+	public function cat_elements(&$rows, $images_variation = 'medium', $image_album = false)
 	{
 		if (empty($this->result["timeedit"]))
 		{
@@ -215,8 +217,15 @@ class Photo_model extends Model
 
 			$row["link"] = $this->diafan->_route->link($row["site_id"], $row["id"], "photo", "cat");
 
+			if($image_album) {
+			    $type = 'element';
+            }
+            else {
+                $type = 'cat';
+            }
+
 			$images  = $this->diafan->_images->get(
-					$images_variation, $row["p_id"], 'photo', 'element',
+					$images_variation, $row["p_id"], 'photo', $type,
 					$row["site_id"], $row["name"], 0,
 					1,
 					$row["link"]
