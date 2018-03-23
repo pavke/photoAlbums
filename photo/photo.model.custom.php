@@ -190,7 +190,7 @@ class Photo_model extends Model
 	 * @param string $image_album выводить фото альбома или последнюю фотографию
 	 * @return void
 	 */
-	public function cat_elements(&$rows, $images_variation = 'medium', $image_album = false)
+	new public function cat_elements(&$rows, $images_variation = 'medium', $image_album = false)
 	{
 		if (empty($this->result["timeedit"]))
 		{
@@ -217,19 +217,21 @@ class Photo_model extends Model
 
 			$row["link"] = $this->diafan->_route->link($row["site_id"], $row["id"], "photo", "cat");
 
-			if($image_album) {
-			    $type = 'element';
-            }
-            else {
+            if($image_album) {
+                $id = $row["id"];
                 $type = 'cat';
             }
+            else {
+                $id = $row["p_id"];
+                $type = 'element';
+            }
 
-			$images  = $this->diafan->_images->get(
-					$images_variation, $row["p_id"], 'photo', $type,
-					$row["site_id"], $row["name"], 0,
-					1,
-					$row["link"]
-				);
+            $images  = $this->diafan->_images->get(
+                $images_variation, $id, 'photo', $type,
+                $row["site_id"], $row["name"], 0,
+                1,
+                $row["link"]
+            );
 
 			unset($row["cat_id"]);
 
