@@ -7,6 +7,7 @@
 [sort="порядок_вывода"]
 [images_variation="тег_размера_изображений"]
 [only_module="only_on_module_page"] 
-[template="шаблон"]>:
+[template="шаблон"]
+[image_album="выводить изображение альбома"]>:
 блок вывода альбомов
 
